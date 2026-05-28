@@ -13,9 +13,9 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
-// Split sentence into word tokens, stripping trailing punctuation into separate token
+// Split into word tokens, stripping trailing punctuation from each token
 function tokenize(text: string): string[] {
-  return text.match(/[^\s]+/g) ?? []
+  return (text.match(/[^\s]+/g) ?? []).map(t => t.replace(/[.,!?;:…]+$/, ''))
 }
 
 function normalize(s: string) {
