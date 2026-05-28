@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getLesson } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
@@ -13,7 +13,6 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
 }
 
-// Split sentence into word tokens, stripping trailing punctuation into separate token
 function tokenize(text: string): string[] {
   return text.match(/[^\s]+/g) ?? []
 }
@@ -23,9 +22,14 @@ function normalize(s: string) {
 }
 
 function checkAssembled(assembled: string[], original: string): boolean {
-  const a = assembled.map(normalize).join(' ')
-  const b = tokenize(original).map(normalize).join(' ')
-  return a === b
+  return assembled.map(normalize).join(' ') === tokenize(original).map(normalize).join(' ')
+}
+
+// Each chip has a unique key so React can track it through reorders
+type Chip = { id: string; text: string }
+
+function makeChips(tokens: string[]): Chip[] {
+  return tokens.map((text, i) => ({ id: `${text}-${i}-${Math.random()}`, text }))
 }
 
 export default function WordBankPage() {
@@ -36,40 +40,102 @@ export default function WordBankPage() {
   const sentences: Sentence[] = bundle?.sentences ?? []
 
   const [index, setIndex] = useState(0)
-  const [bank, setBank] = useState<string[]>([])       // chips still available
-  const [assembled, setAssembled] = useState<string[]>([]) // chips placed by user
+  const [bank, setBank] = useState<Chip[]>([])
+  const [assembled, setAssembled] = useState<Chip[]>([])
   const [checked, setChecked] = useState(false)
   const [correct, setCorrect] = useState(false)
   const [done, setDone] = useState(false)
+  const [dragOver, setDragOver] = useState<{ area: 'assembled' | 'bank'; pos: number } | null>(null)
 
+  const dragSrc = useRef<{ area: 'assembled' | 'bank'; idx: number } | null>(null)
   const sentence = sentences[index]
 
   useEffect(() => {
     if (sentence) {
-      setBank(shuffle(tokenize(sentence.original)))
+      setBank(shuffle(makeChips(tokenize(sentence.original))))
       setAssembled([])
       setChecked(false)
       setCorrect(false)
+      setDragOver(null)
     }
   }, [index, sentence])
 
+  // ── tap handlers (existing behaviour) ──────────────────────────
   function tapBank(i: number) {
     if (checked) return
-    const token = bank[i]
+    const chip = bank[i]
     setBank(b => b.filter((_, idx) => idx !== i))
-    setAssembled(a => [...a, token])
+    setAssembled(a => [...a, chip])
   }
 
   function tapAssembled(i: number) {
     if (checked) return
-    const token = assembled[i]
+    const chip = assembled[i]
     setAssembled(a => a.filter((_, idx) => idx !== i))
-    setBank(b => [...b, token])
+    setBank(b => [...b, chip])
   }
 
+  // ── drag handlers ───────────────────────────────────────────────
+  function onDragStart(area: 'assembled' | 'bank', idx: number) {
+    dragSrc.current = { area, idx }
+  }
+
+  function onDragOverAssembled(e: React.DragEvent, pos: number) {
+    e.preventDefault()
+    setDragOver({ area: 'assembled', pos })
+  }
+
+  function onDragOverBank(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver({ area: 'bank', pos: 0 })
+  }
+
+  function onDropAssembled(insertAt: number) {
+    const src = dragSrc.current
+    dragSrc.current = null
+    setDragOver(null)
+    if (!src) return
+
+    if (src.area === 'assembled') {
+      // Reorder within assembled
+      setAssembled(a => {
+        const next = [...a]
+        const [chip] = next.splice(src.idx, 1)
+        const dest = src.idx < insertAt ? insertAt - 1 : insertAt
+        next.splice(dest, 0, chip)
+        return next
+      })
+    } else {
+      // Move from bank to assembled
+      const chip = bank[src.idx]
+      setBank(b => b.filter((_, i) => i !== src.idx))
+      setAssembled(a => {
+        const next = [...a]
+        next.splice(insertAt, 0, chip)
+        return next
+      })
+    }
+  }
+
+  function onDropBank() {
+    const src = dragSrc.current
+    dragSrc.current = null
+    setDragOver(null)
+    if (!src || src.area === 'bank') return
+    const chip = assembled[src.idx]
+    setAssembled(a => a.filter((_, i) => i !== src.idx))
+    setBank(b => [...b, chip])
+  }
+
+  function onDragEnd() {
+    dragSrc.current = null
+    setDragOver(null)
+  }
+
+  // ── check / next ────────────────────────────────────────────────
   function check() {
     if (checked || assembled.length === 0) return
-    const ok = checkAssembled(assembled, sentence.original)
+    const ok = checkAssembled(assembled.map(c => c.text), sentence.original)
     setCorrect(ok)
     setChecked(true)
     recordResult(sentence.id, ok)
@@ -104,37 +170,54 @@ export default function WordBankPage() {
     )
   }
 
-  const resultColor = !checked ? 'border-gray-200 bg-gray-50'
+  const resultBorder = !checked ? 'border-gray-200 bg-gray-50'
     : correct ? 'border-green-400 bg-green-50'
     : 'border-red-400 bg-red-50'
+
+  const isOverAssembled = dragOver?.area === 'assembled'
+  const isOverBank = dragOver?.area === 'bank'
 
   return (
     <ExerciseShell title="Word bank" backHref={`/lesson/${unit}/${lesson}`} current={index} total={sentences.length}>
       <div className="flex-1 flex flex-col gap-4 pt-4">
-        {/* English prompt */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">English</p>
           <p className="text-lg font-medium text-gray-900">{sentence.translation}</p>
         </div>
 
         {/* Assembly area */}
-        <div className={`min-h-[72px] rounded-2xl border-2 p-3 flex flex-wrap gap-2 transition-colors ${resultColor}`}>
+        <div
+          onDragOver={e => { e.preventDefault(); if (!dragOver || dragOver.area !== 'assembled') setDragOver({ area: 'assembled', pos: assembled.length }) }}
+          onDrop={() => onDropAssembled(assembled.length)}
+          onDragLeave={() => setDragOver(null)}
+          className={`min-h-[72px] rounded-2xl border-2 p-3 flex flex-wrap gap-2 transition-colors
+            ${resultBorder} ${isOverAssembled ? 'border-amber-400' : ''}`}
+        >
           {assembled.length === 0 && !checked && (
-            <span className="text-gray-400 text-sm self-center">Tap words below to build the sentence…</span>
+            <span className="text-gray-400 text-sm self-center">Tap or drag words here…</span>
           )}
-          {assembled.map((token, i) => (
-            <button
-              key={i}
-              onClick={() => tapAssembled(i)}
-              disabled={checked}
-              className="px-3 py-1.5 rounded-xl bg-amber-400 text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70"
-            >
-              {token}
-            </button>
+          {assembled.map((chip, i) => (
+            <div key={chip.id} className="flex items-center">
+              {/* Drop zone before each chip */}
+              <div
+                onDragOver={e => onDragOverAssembled(e, i)}
+                onDrop={() => onDropAssembled(i)}
+                className={`w-1 h-8 rounded-full transition-all ${dragOver?.area === 'assembled' && dragOver.pos === i ? 'bg-amber-400 w-1.5' : ''}`}
+              />
+              <button
+                draggable={!checked}
+                onDragStart={() => onDragStart('assembled', i)}
+                onDragEnd={onDragEnd}
+                onClick={() => tapAssembled(i)}
+                disabled={checked}
+                className="px-3 py-1.5 rounded-xl bg-amber-400 text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70 cursor-grab active:cursor-grabbing select-none"
+              >
+                {chip.text}
+              </button>
+            </div>
           ))}
         </div>
 
-        {/* Result feedback */}
         {checked && (
           <div className="flex items-center gap-2">
             {correct
@@ -145,16 +228,24 @@ export default function WordBankPage() {
           </div>
         )}
 
-        {/* Word bank chips */}
-        <div className="flex flex-wrap gap-2">
-          {bank.map((token, i) => (
+        {/* Word bank */}
+        <div
+          onDragOver={onDragOverBank}
+          onDrop={onDropBank}
+          onDragLeave={() => setDragOver(null)}
+          className={`flex flex-wrap gap-2 min-h-[44px] rounded-2xl p-1 transition-colors ${isOverBank ? 'bg-amber-50' : ''}`}
+        >
+          {bank.map((chip, i) => (
             <button
-              key={i}
+              key={chip.id}
+              draggable={!checked}
+              onDragStart={() => onDragStart('bank', i)}
+              onDragEnd={onDragEnd}
               onClick={() => tapBank(i)}
               disabled={checked}
-              className="px-3 py-1.5 rounded-xl bg-white border-2 border-gray-200 text-gray-800 font-medium text-base active:scale-95 hover:border-amber-300 disabled:opacity-40"
+              className="px-3 py-1.5 rounded-xl bg-white border-2 border-gray-200 text-gray-800 font-medium text-base active:scale-95 hover:border-amber-300 disabled:opacity-40 cursor-grab active:cursor-grabbing select-none"
             >
-              {token}
+              {chip.text}
             </button>
           ))}
         </div>
