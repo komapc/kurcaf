@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { DataProvider } from '@/lib/DataContext'
 
 export const metadata: Metadata = {
   title: 'Kurcaf — Learn Latvian',
@@ -12,7 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
-      <body className="bg-gray-50 text-gray-900 antialiased" suppressHydrationWarning>{children}</body>
+      <body className="bg-gray-50 text-gray-900 antialiased" suppressHydrationWarning>
+        <DataProvider>
+          {children}
+        </DataProvider>
+      </body>
     </html>
   )
 }
