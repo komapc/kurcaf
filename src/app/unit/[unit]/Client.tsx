@@ -36,17 +36,31 @@ function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
           <div className="text-xs text-gray-600">{bundle.words.length} words · {bundle.sentences.length} sentences</div>
         </div>
       </div>
-      <div className="grid grid-cols-5 gap-2">
-        {MODE_LABELS.map(m => (
-          <Link
-            key={m.key}
-            href={`/lesson/${unit}/${bundle.lesson}/${m.key}`}
-            className="flex flex-col items-center gap-1 py-2 rounded-xl bg-gray-50 hover:bg-amber-50 active:scale-95 transition-all"
-          >
-            <span className="text-lg">{m.emoji}</span>
-            <span className="text-[10px] text-gray-500">{m.label}</span>
-          </Link>
-        ))}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-3 gap-2">
+          {MODE_LABELS.slice(0, 3).map(m => (
+            <Link
+              key={m.key}
+              href={`/lesson/${unit}/${bundle.lesson}/${m.key}`}
+              className="flex flex-col items-center gap-1 py-2 rounded-xl bg-gray-50 hover:bg-amber-50 active:scale-95 transition-all"
+            >
+              <span className="text-lg">{m.emoji}</span>
+              <span className="text-[10px] text-gray-600">{m.label}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {MODE_LABELS.slice(3).map(m => (
+            <Link
+              key={m.key}
+              href={`/lesson/${unit}/${bundle.lesson}/${m.key}`}
+              className="flex flex-col items-center gap-1 py-2 rounded-xl bg-gray-50 hover:bg-amber-50 active:scale-95 transition-all"
+            >
+              <span className="text-lg">{m.emoji}</span>
+              <span className="text-[10px] text-gray-600">{m.label}</span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -69,7 +83,7 @@ export default function UnitPage() {
   return (
     <div className="min-h-screen max-w-md mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/" className="text-2xl text-gray-400 hover:text-gray-600">‹</Link>
+        <Link href="/" className="text-2xl text-gray-600 hover:text-gray-900">‹</Link>
         <h1 className="text-xl font-bold text-gray-900">Unit {unitNum}</h1>
       </div>
       <div className="flex flex-col gap-4">
