@@ -3,16 +3,22 @@
 import { useParams, useRouter } from 'next/navigation'
 import { getLesson } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
+import { useData } from '@/lib/DataContext'
+import { lessonParams } from '@/lib/staticParams'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
 import type { Dialogue } from '@/lib/types'
 
+export function generateStaticParams() { return lessonParams() }
+
 export default function DialoguePage() {
   const { unit, lesson } = useParams<{ unit: string; lesson: string }>()
   const router = useRouter()
-  const bundle = getLesson(parseInt(unit), parseInt(lesson))
+  const { ready } = useData()
+  const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const dialogues: Dialogue[] = bundle?.dialogues ?? []
 
+  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
   if (!dialogues.length) return <div className="p-8 text-center text-gray-400">No dialogue in this lesson</div>
 
   function markDone() {

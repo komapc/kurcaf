@@ -4,10 +4,14 @@ import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { getLesson, wordMap } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
+import { useData } from '@/lib/DataContext'
+import { lessonParams } from '@/lib/staticParams'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
 import ItemImage from '@/components/ItemImage'
 import type { Sentence } from '@/lib/types'
+
+export function generateStaticParams() { return lessonParams() }
 
 function normalize(s: string) {
   return s.trim().toLowerCase()
@@ -16,7 +20,8 @@ function normalize(s: string) {
 export default function FillPage() {
   const { unit, lesson } = useParams<{ unit: string; lesson: string }>()
   const router = useRouter()
-  const bundle = getLesson(parseInt(unit), parseInt(lesson))
+  const { ready } = useData()
+  const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const sentences: Sentence[] = bundle?.sentences ?? []
 
   const [index, setIndex] = useState(0)
@@ -48,6 +53,7 @@ export default function FillPage() {
     }
   }
 
+  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
   if (!sentences.length) return <div className="p-8 text-center text-gray-400">No sentences in this lesson</div>
 
   if (done) {

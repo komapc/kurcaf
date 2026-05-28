@@ -5,8 +5,13 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getUnit } from '@/lib/data'
 import { getLessonProgress } from '@/lib/progress'
+import { useData } from '@/lib/DataContext'
 import ProgressRing from '@/components/ProgressRing'
 import type { LessonBundle } from '@/lib/types'
+
+export function generateStaticParams() {
+  return Array.from({ length: 50 }, (_, i) => ({ unit: String(i + 1) }))
+}
 
 const MODE_LABELS = [
   { key: 'flashcard', label: 'Flashcard', emoji: '🃏' },
@@ -52,8 +57,13 @@ function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
 
 export default function UnitPage() {
   const { unit } = useParams<{ unit: string }>()
+  const { ready } = useData()
   const unitNum = parseInt(unit)
-  const lessons = getUnit(unitNum)
+  const lessons = ready ? getUnit(unitNum) : []
+
+  if (!ready) {
+    return <div className="p-8 text-center text-gray-400">Loading…</div>
+  }
 
   if (!lessons.length) {
     return <div className="p-8 text-center text-gray-400">Unit not found</div>
