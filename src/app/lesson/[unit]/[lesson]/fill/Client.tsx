@@ -12,6 +12,9 @@ import type { Sentence } from '@/lib/types'
 
 function normalize(s: string) {
   return s.trim().toLowerCase()
+    .replace(/[āa]/g, 'a').replace(/[ēe]/g, 'e').replace(/[īi]/g, 'i').replace(/[ūu]/g, 'u')
+    .replace(/ņ/g, 'n').replace(/ļ/g, 'l').replace(/ķ/g, 'k').replace(/ģ/g, 'g')
+    .replace(/š/g, 's').replace(/ž/g, 'z').replace(/č/g, 'c')
 }
 
 export default function FillPage() {
