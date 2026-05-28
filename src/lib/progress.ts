@@ -1,5 +1,3 @@
-'use client'
-
 import type { ItemProgress } from './types'
 
 const STORAGE_KEY = 'kurcaf_progress'
