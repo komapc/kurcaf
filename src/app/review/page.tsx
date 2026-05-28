@@ -75,9 +75,9 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
       <header className="flex items-center gap-3 px-4 pt-4 pb-3">
-        <button onClick={() => router.push('/')} className="text-2xl text-gray-400">‹</button>
+        <button onClick={() => router.push('/')} className="text-2xl text-gray-600">‹</button>
         <div className="flex-1">
-          <div className="text-xs text-gray-400 mb-1">{index + 1} / {items.length}</div>
+          <div className="text-xs text-gray-600 mb-1">{index + 1} / {items.length}</div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${((index + 1) / items.length) * 100}%` }} />
           </div>
@@ -93,12 +93,12 @@ export default function ReviewPage() {
         >
           {!flipped ? (
             <>
-              <p className="text-xs text-gray-400 mb-2">{current.type === 'word' ? 'Word' : 'Sentence'} — tap to reveal</p>
+              <p className="text-xs text-gray-600 mb-2">{current.type === 'word' ? 'Word' : 'Sentence'} — tap to reveal</p>
               <p className="text-xl font-semibold text-gray-800">{label}</p>
             </>
           ) : (
             <>
-              <p className="text-xs text-gray-400 mb-2">Latvian</p>
+              <p className="text-xs text-gray-600 mb-2">Latvian</p>
               <p className="text-xl font-bold text-amber-600">{original}</p>
               <div className="flex justify-center mt-3">
                 <AudioButton src={`/audio/${current.item.soundFile}`} size="md" autoPlay />

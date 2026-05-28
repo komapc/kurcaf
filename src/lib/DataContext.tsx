@@ -42,10 +42,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         initFromRaw(JSON.parse(stored))
         setReady(true)
+        return
       } catch {
         localStorage.removeItem(DATA_KEY)
       }
     }
+    // No localStorage data — try the bundled default file (src/data/lv_Latvian.json
+    // is copied to public/data/ at build time if present)
+    const base = process.env.NODE_ENV === 'production' ? '/kurcaf' : ''
+    fetch(`${base}/data/lv_Latvian.json`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(raw => { initFromRaw(raw); setReady(true) })
+      .catch(() => { /* file not present — show setup screen */ })
   }, [])
 
   const persist = useCallback((raw: unknown, url?: string) => {

@@ -15,8 +15,8 @@ export default function DialoguePage() {
   const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const dialogues: Dialogue[] = bundle?.dialogues ?? []
 
-  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
-  if (!dialogues.length) return <div className="p-8 text-center text-gray-400">No dialogue in this lesson</div>
+  if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
+  if (!dialogues.length) return <div className="p-8 text-center text-gray-600">No dialogue in this lesson</div>
 
   function markDone() {
     dialogues.forEach(d => recordResult(d.id, true))

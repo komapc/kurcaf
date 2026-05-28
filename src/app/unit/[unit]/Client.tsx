@@ -33,7 +33,7 @@ function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
         <ProgressRing value={pct} size={40} stroke={4} />
         <div>
           <div className="font-semibold text-gray-800">Lesson {bundle.lesson}</div>
-          <div className="text-xs text-gray-400">{bundle.words.length} words · {bundle.sentences.length} sentences</div>
+          <div className="text-xs text-gray-600">{bundle.words.length} words · {bundle.sentences.length} sentences</div>
         </div>
       </div>
       <div className="grid grid-cols-5 gap-2">
@@ -59,11 +59,11 @@ export default function UnitPage() {
   const lessons = ready ? getUnit(unitNum) : []
 
   if (!ready) {
-    return <div className="p-8 text-center text-gray-400">Loading…</div>
+    return <div className="p-8 text-center text-gray-600">Loading…</div>
   }
 
   if (!lessons.length) {
-    return <div className="p-8 text-center text-gray-400">Unit not found</div>
+    return <div className="p-8 text-center text-gray-600">Unit not found</div>
   }
 
   return (
