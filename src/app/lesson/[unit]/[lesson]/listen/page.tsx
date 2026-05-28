@@ -1,12 +1,16 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { getLesson, getUnitWords } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
+import { useData } from '@/lib/DataContext'
+import { lessonParams } from '@/lib/staticParams'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
 import type { Word } from '@/lib/types'
+
+export function generateStaticParams() { return lessonParams() }
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5)
@@ -20,7 +24,8 @@ function buildOptions(correct: Word, pool: Word[]): Word[] {
 export default function ListenPage() {
   const { unit, lesson } = useParams<{ unit: string; lesson: string }>()
   const router = useRouter()
-  const bundle = getLesson(parseInt(unit), parseInt(lesson))
+  const { ready } = useData()
+  const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const words: Word[] = bundle?.words ?? []
   const unitPool = getUnitWords(parseInt(unit))
 
@@ -50,6 +55,7 @@ export default function ListenPage() {
     }
   }
 
+  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
   if (!words.length) return <div className="p-8 text-center text-gray-400">No words in this lesson</div>
 
   if (done) {
