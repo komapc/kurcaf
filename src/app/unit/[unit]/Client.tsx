@@ -12,8 +12,6 @@ import type { LessonBundle } from '@/lib/types'
 
 const WORD_MODES = [
   { key: 'flashcard', label: 'Flashcard', emoji: '🃏' },
-  { key: 'listen',    label: 'Listen',    emoji: '🎧' },
-  { key: 'choice',    label: 'Choice',    emoji: '🔤' },
   { key: 'fill',      label: 'Type',      emoji: '✏️' },
 ]
 const SENTENCE_MODES = [
@@ -41,7 +39,7 @@ function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
         </div>
       </div>
       <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {WORD_MODES.map(m => (
             <Link key={m.key} href={`/lesson/${unit}/${bundle.lesson}/${m.key}`}
               className="flex flex-col items-center gap-1 py-2 rounded-xl bg-gray-50 hover:bg-amber-50 active:scale-95 transition-all">
