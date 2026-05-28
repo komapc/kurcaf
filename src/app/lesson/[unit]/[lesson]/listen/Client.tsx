@@ -53,8 +53,8 @@ export default function ListenPage() {
     }
   }
 
-  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
-  if (!words.length) return <div className="p-8 text-center text-gray-400">No words in this lesson</div>
+  if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
+  if (!words.length) return <div className="p-8 text-center text-gray-600">No words in this lesson</div>
 
   if (done) {
     return (

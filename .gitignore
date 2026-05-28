@@ -46,3 +46,6 @@ next-env.d.ts
 # assets — extracted from zip, not for git
 /public/audio/
 /public/images/
+
+# auto-copied from src/data/ at build time, not for git
+/public/data/

@@ -50,8 +50,8 @@ export default function FillPage() {
     }
   }
 
-  if (!ready) return <div className="p-8 text-center text-gray-400">Loading…</div>
-  if (!sentences.length) return <div className="p-8 text-center text-gray-400">No sentences in this lesson</div>
+  if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
+  if (!sentences.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
 
   if (done) {
     return (
@@ -78,12 +78,12 @@ export default function FillPage() {
       <div className="flex-1 flex flex-col gap-4 pt-4">
         <ItemImage src={`/images/${sentence.id}.png`} alt={sentence.translation} className="w-full aspect-video" />
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-sm text-gray-400 mb-1">English</p>
+          <p className="text-sm text-gray-600 mb-1">English</p>
           <p className="text-base text-gray-700">{sentence.translation}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-sm text-gray-400 mb-1">Latvian — fill in the blank</p>
-          <p className="text-base text-gray-600 mb-3">{blanked}</p>
+          <p className="text-sm text-gray-600 mb-1">Latvian — fill in the blank</p>
+          <p className="text-base text-gray-800 mb-3">{blanked}</p>
           <input
             type="text"
             value={input}
