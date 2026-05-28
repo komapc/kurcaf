@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getLesson, wordMap } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
@@ -54,6 +54,17 @@ export default function FillPage() {
     else { setIndex(i => i + 1); setInput(''); setResult(null) }
   }
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'Enter') return
+      if (done) { router.back(); return }
+      if (result) { next(); return }
+      if (input.trim()) check()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [done, result, input, index])
+
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
   if (!sentences.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
 
@@ -70,10 +81,11 @@ export default function FillPage() {
   const targetWord = wordMap.get(sentence.word)
   const answer = targetWord?.original ?? ''
 
-  const blanked = sentence.original.replace(
-    new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
-    '_____'
-  )
+  // Try to blank the word verbatim; Latvian is inflected so it may not match
+  const wordFoundInSentence = new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(sentence.original)
+  const blanked = wordFoundInSentence
+    ? sentence.original.replace(new RegExp(answer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '_____')
+    : null
 
   const inputCls = `w-full px-4 py-3 rounded-xl border-2 text-base outline-none transition-colors ${
     !result ? 'border-gray-300 focus:border-amber-400 text-gray-900' :
@@ -91,13 +103,17 @@ export default function FillPage() {
           <p className="text-base font-medium text-gray-900">{sentence.translation}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Latvian — fill in the blank</p>
-          <p className="text-base font-medium text-gray-800 mb-3">{blanked}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+            {blanked ? 'Latvian — fill in the blank' : 'Type the key word in Latvian'}
+          </p>
+          {blanked
+            ? <p className="text-base font-medium text-gray-800 mb-3">{blanked}</p>
+            : <p className="text-sm text-gray-600 mb-3 italic">{sentence.original}</p>
+          }
           <input
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !result && check()}
             disabled={!!result}
             placeholder="Type the missing word…"
             className={inputCls}
