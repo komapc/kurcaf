@@ -14,7 +14,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function tokenize(text: string): string[] {
-  return text.match(/[^\s]+/g) ?? []
+  return (text.match(/[^\s]+/g) ?? []).filter(t => !/^\(.*\)$/.test(t))
 }
 
 function stripPunct(s: string) {
