@@ -4,11 +4,10 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getUnit } from '@/lib/data'
-import { getLessonProgress } from '@/lib/progress'
+import { getLessonMastery } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
 import ProgressRing from '@/components/ProgressRing'
 import type { LessonBundle } from '@/lib/types'
-
 
 const WORD_MODES = [
   { key: 'flashcard', label: 'Flashcard', emoji: '🃏' },
@@ -22,11 +21,11 @@ const SENTENCE_MODES = [
 
 function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
   const [pct, setPct] = useState(0)
-  const allIds = [...bundle.words.map(w => w.id), ...bundle.sentences.map(s => s.id)]
+  const allIds = bundle.words.map(w => w.id)
 
   useEffect(() => {
-    const { seen, total } = getLessonProgress(allIds)
-    setPct(total > 0 ? seen / total : 0)
+    const { mastered, total } = getLessonMastery(allIds)
+    setPct(total > 0 ? mastered / total : 0)
   }, [])
 
   return (
@@ -68,13 +67,8 @@ export default function UnitPage() {
   const unitNum = parseInt(unit)
   const lessons = ready ? getUnit(unitNum) : []
 
-  if (!ready) {
-    return <div className="p-8 text-center text-gray-600">Loading…</div>
-  }
-
-  if (!lessons.length) {
-    return <div className="p-8 text-center text-gray-600">Unit not found</div>
-  }
+  if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
+  if (!lessons.length) return <div className="p-8 text-center text-gray-600">Unit not found</div>
 
   return (
     <div className="min-h-screen max-w-md mx-auto px-4 py-8">

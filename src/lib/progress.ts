@@ -44,6 +44,18 @@ export function getLessonProgress(ids: string[]): { seen: number; total: number 
   return { seen, total: ids.length }
 }
 
+// Mastery = fraction of ids where accuracy >= 80% with at least 1 attempt
+export function getLessonMastery(ids: string[]): { mastered: number; total: number } {
+  const store = getProgress()
+  const mastered = ids.filter(id => {
+    const p = store[id]
+    if (!p) return false
+    const total = p.correct + p.incorrect
+    return total >= 1 && p.correct / total >= 0.8
+  }).length
+  return { mastered, total: ids.length }
+}
+
 export function resetProgress(): void {
   localStorage.removeItem(STORAGE_KEY)
 }

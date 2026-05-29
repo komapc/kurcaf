@@ -23,7 +23,13 @@ export default function SentencesPage() {
   const router = useRouter()
   const { ready } = useData()
   const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
-  const sentences: Sentence[] = bundle?.sentences ?? []
+  const [sentences, setSentences] = useState<Sentence[]>([])
+
+  useEffect(() => {
+    if (!ready) return
+    const b = getLesson(parseInt(unit), parseInt(lesson))
+    setSentences(shuffle([...(b?.sentences ?? [])]))
+  }, [ready, unit, lesson])
   // pool = all sentences in the unit across all lessons
   const unitSentences = ready
     ? Array.from({ length: 4 }, (_, i) =>

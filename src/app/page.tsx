@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { allUnits, getUnit } from '@/lib/data'
-import { getLessonProgress } from '@/lib/progress'
+import { getLessonMastery } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
 import ProgressRing from '@/components/ProgressRing'
 
@@ -12,9 +12,9 @@ function UnitCard({ unit }: { unit: number }) {
 
   useEffect(() => {
     const lessons = getUnit(unit)
-    const allIds = lessons.flatMap(l => [...l.words.map(w => w.id), ...l.sentences.map(s => s.id)])
-    const { seen, total } = getLessonProgress(allIds)
-    setPct(total > 0 ? seen / total : 0)
+    const allIds = lessons.flatMap(l => l.words.map(w => w.id))
+    const { mastered, total } = getLessonMastery(allIds)
+    setPct(total > 0 ? mastered / total : 0)
   }, [unit])
 
   return (
