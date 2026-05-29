@@ -9,6 +9,10 @@ const OUT = resolve(__dirname, '../src/data/lv_Latvian.json')
 
 let apiKey = process.env.API_KEY ?? ''
 if (!apiKey) {
+  if (!process.stdin.isTTY) {
+    console.error('Error: API_KEY env var is not set. Add it as a GitHub secret.')
+    process.exit(1)
+  }
   const rl = createInterface({ input: process.stdin, output: process.stderr })
   apiKey = await new Promise(res => rl.question('API key: ', res))
   rl.close()
