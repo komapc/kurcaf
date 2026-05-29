@@ -7,9 +7,12 @@ import { createInterface } from 'readline'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = resolve(__dirname, '../src/data/lv_Latvian.json')
 
-const rl = createInterface({ input: process.stdin, output: process.stderr })
-const apiKey = await new Promise(res => rl.question('API key: ', res))
-rl.close()
+let apiKey = process.env.API_KEY ?? ''
+if (!apiKey) {
+  const rl = createInterface({ input: process.stdin, output: process.stderr })
+  apiKey = await new Promise(res => rl.question('API key: ', res))
+  rl.close()
+}
 
 const response = await fetch('https://api.pakala.vip/v1/ling/phrases/lv', {
   headers: { 'X-API-Key': apiKey.trim() },
