@@ -17,8 +17,12 @@ function tokenize(text: string): string[] {
   return text.match(/[^\s]+/g) ?? []
 }
 
+function stripPunct(s: string) {
+  return s.replace(/[.,!?;:…]+$/, '')
+}
+
 function normalize(s: string) {
-  return s.replace(/[.,!?;:…]+$/, '').toLowerCase()
+  return stripPunct(s).toLowerCase()
 }
 
 function checkAssembled(assembled: string[], original: string): boolean {
@@ -29,7 +33,7 @@ function checkAssembled(assembled: string[], original: string): boolean {
 type Chip = { id: string; text: string }
 
 function makeChips(tokens: string[]): Chip[] {
-  return tokens.map((text, i) => ({ id: `${text}-${i}-${Math.random()}`, text }))
+  return tokens.map((text, i) => ({ id: `${text}-${i}-${Math.random()}`, text: stripPunct(text) }))
 }
 
 export default function WordBankPage() {
@@ -37,8 +41,9 @@ export default function WordBankPage() {
   const router = useRouter()
   const { ready } = useData()
   const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
-  const sentences: Sentence[] = bundle?.sentences ?? []
+  const sourceSentences: Sentence[] = bundle?.sentences ?? []
 
+  const [sentenceList, setSentenceList] = useState<Sentence[]>([])
   const [index, setIndex] = useState(0)
   const [bank, setBank] = useState<Chip[]>([])
   const [assembled, setAssembled] = useState<Chip[]>([])
@@ -47,8 +52,17 @@ export default function WordBankPage() {
   const [done, setDone] = useState(false)
   const [dragOver, setDragOver] = useState<{ area: 'assembled' | 'bank'; pos: number } | null>(null)
 
+  useEffect(() => {
+    if (sourceSentences.length > 0) {
+      setSentenceList(sourceSentences)
+      setIndex(0)
+      setDone(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceSentences.length])
+
   const dragSrc = useRef<{ area: 'assembled' | 'bank'; idx: number } | null>(null)
-  const sentence = sentences[index]
+  const sentence = sentenceList[index]
 
   useEffect(() => {
     if (sentence) {
@@ -142,8 +156,15 @@ export default function WordBankPage() {
   }
 
   function next() {
-    if (index + 1 >= sentences.length) { setDone(true) }
-    else { setIndex(i => i + 1) }
+    if (!correct) {
+      // Re-queue the missed sentence at the end
+      setSentenceList(list => [...list, list[index]])
+      setIndex(i => i + 1)
+    } else if (index + 1 >= sentenceList.length) {
+      setDone(true)
+    } else {
+      setIndex(i => i + 1)
+    }
   }
 
   useEffect(() => {
@@ -158,7 +179,7 @@ export default function WordBankPage() {
   }, [done, checked, assembled, index])
 
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
-  if (!sentences.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
+  if (ready && !sentenceList.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
 
   if (done) {
     return (
@@ -170,6 +191,15 @@ export default function WordBankPage() {
     )
   }
 
+  const correctTokens = checked && !correct ? tokenize(sentence.original) : []
+
+  function chipColor(i: number): string {
+    if (!checked) return 'bg-amber-400'
+    if (correct) return 'bg-green-500'
+    const expected = correctTokens[i]
+    return expected && normalize(assembled[i].text) === normalize(expected) ? 'bg-amber-400' : 'bg-red-400'
+  }
+
   const resultBorder = !checked ? 'border-gray-200 bg-gray-50'
     : correct ? 'border-green-400 bg-green-50'
     : 'border-red-400 bg-red-50'
@@ -178,7 +208,7 @@ export default function WordBankPage() {
   const isOverBank = dragOver?.area === 'bank'
 
   return (
-    <ExerciseShell title="Word bank" backHref={`/lesson/${unit}/${lesson}`} current={index} total={sentences.length}>
+    <ExerciseShell title="Word bank" backHref={`/lesson/${unit}/${lesson}`} current={index} total={sentenceList.length}>
       <div className="flex-1 flex flex-col gap-4 pt-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">English</p>
@@ -201,7 +231,7 @@ export default function WordBankPage() {
               {/* Drop zone before each chip */}
               <div
                 onDragOver={e => onDragOverAssembled(e, i)}
-                onDrop={() => onDropAssembled(i)}
+                onDrop={e => { e.stopPropagation(); onDropAssembled(i) }}
                 className={`w-1 h-8 rounded-full transition-all ${dragOver?.area === 'assembled' && dragOver.pos === i ? 'bg-amber-400 w-1.5' : ''}`}
               />
               <button
@@ -210,12 +240,18 @@ export default function WordBankPage() {
                 onDragEnd={onDragEnd}
                 onClick={() => tapAssembled(i)}
                 disabled={checked}
-                className="px-3 py-1.5 rounded-xl bg-amber-400 text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70 cursor-grab active:cursor-grabbing select-none"
+                className={`px-3 py-1.5 rounded-xl text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70 cursor-grab active:cursor-grabbing select-none ${chipColor(i)}`}
               >
                 {chip.text}
               </button>
             </div>
           ))}
+          {/* Trailing drop zone so reorder to end works */}
+          <div
+            onDragOver={e => onDragOverAssembled(e, assembled.length)}
+            onDrop={e => { e.stopPropagation(); onDropAssembled(assembled.length) }}
+            className={`w-4 self-stretch ${dragOver?.area === 'assembled' && dragOver.pos === assembled.length ? 'bg-amber-100 rounded' : ''}`}
+          />
         </div>
 
         {checked && (
