@@ -5,14 +5,16 @@ import { initFromRaw, isInitialized } from './data'
 
 const DATA_KEY = 'kurcaf_data'
 export const DATA_URL_KEY = 'kurcaf_data_url'
+export const DATA_API_KEY = 'kurcaf_api_key'
 
 interface DataContextValue {
   ready: boolean
   loading: boolean
   error: string | null
   dataUrl: string
+  apiKey: string
   setDataUrl: (url: string) => void
-  fetchFromUrl: (url: string) => Promise<void>
+  fetchFromUrl: (url: string, apiKey?: string) => Promise<void>
   loadFromFile: (file: File) => Promise<void>
   clearData: () => void
 }
@@ -22,6 +24,7 @@ const DataContext = createContext<DataContextValue>({
   loading: false,
   error: null,
   dataUrl: '',
+  apiKey: '',
   setDataUrl: () => {},
   fetchFromUrl: async () => {},
   loadFromFile: async () => {},
@@ -33,11 +36,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dataUrl, setDataUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
 
   useEffect(() => {
     const stored = localStorage.getItem(DATA_KEY)
     const url = localStorage.getItem(DATA_URL_KEY) ?? ''
+    const key = localStorage.getItem(DATA_API_KEY) ?? ''
     setDataUrl(url)
+    setApiKey(key)
     if (stored) {
       try {
         initFromRaw(JSON.parse(stored))
@@ -47,13 +53,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(DATA_KEY)
       }
     }
-    // No localStorage data — try the bundled default file (src/data/lv_Latvian.json
-    // is copied to public/data/ at build time if present)
     const base = process.env.NODE_ENV === 'production' ? '/kurcaf' : ''
     fetch(`${base}/data/lv_Latvian.json`)
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(raw => { initFromRaw(raw); setReady(true) })
-      .catch(() => { /* file not present — show setup screen */ })
+      .catch(() => {})
   }, [])
 
   const persist = useCallback((raw: unknown, url?: string) => {
@@ -67,16 +71,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setError(null)
   }, [])
 
-  const fetchFromUrl = useCallback(async (url: string) => {
+  const fetchFromUrl = useCallback(async (url: string, key?: string) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(url)
+      const headers: Record<string, string> = {}
+      if (key) headers['X-API-Key'] = key
+      const res = await fetch(url, { headers })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const raw = await res.json()
       persist(raw, url)
       setDataUrl(url)
-      localStorage.setItem(DATA_URL_KEY, url)
+      if (key !== undefined) {
+        if (key) localStorage.setItem(DATA_API_KEY, key)
+        else localStorage.removeItem(DATA_API_KEY)
+        setApiKey(key)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Fetch failed')
     } finally {
@@ -91,7 +101,6 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       const text = await file.text()
       const raw = JSON.parse(text)
       persist(raw, '')
-      localStorage.removeItem(DATA_URL_KEY)
       setDataUrl('')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Invalid JSON file')
@@ -103,13 +112,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const clearData = useCallback(() => {
     localStorage.removeItem(DATA_KEY)
     localStorage.removeItem(DATA_URL_KEY)
+    localStorage.removeItem(DATA_API_KEY)
     setReady(false)
     setDataUrl('')
+    setApiKey('')
     setError(null)
   }, [])
 
   return (
-    <DataContext.Provider value={{ ready, loading, error, dataUrl, setDataUrl, fetchFromUrl, loadFromFile, clearData }}>
+    <DataContext.Provider value={{ ready, loading, error, dataUrl, apiKey, setDataUrl, fetchFromUrl, loadFromFile, clearData }}>
       {children}
     </DataContext.Provider>
   )

@@ -8,17 +8,22 @@ const DEFAULT_URL = 'https://api.pakala.vip/v1/ling/phrases/lv'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { ready, loading, error, dataUrl, fetchFromUrl, loadFromFile, clearData } = useData()
+  const { ready, loading, error, dataUrl, apiKey, fetchFromUrl, loadFromFile, clearData } = useData()
   const [urlInput, setUrlInput] = useState(dataUrl || DEFAULT_URL)
+  const [keyInput, setKeyInput] = useState(apiKey)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (dataUrl) setUrlInput(dataUrl)
   }, [dataUrl])
 
+  useEffect(() => {
+    setKeyInput(apiKey)
+  }, [apiKey])
+
   async function handleFetch() {
     if (!urlInput.trim()) return
-    await fetchFromUrl(urlInput.trim())
+    await fetchFromUrl(urlInput.trim(), keyInput.trim())
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -56,6 +61,14 @@ export default function SettingsPage() {
           onChange={e => setUrlInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleFetch()}
           placeholder={DEFAULT_URL}
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mb-3 text-gray-800"
+        />
+        <input
+          type="password"
+          value={keyInput}
+          onChange={e => setKeyInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleFetch()}
+          placeholder="API key (if required)"
           className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mb-3 text-gray-800"
         />
         <button
