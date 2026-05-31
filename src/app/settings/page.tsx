@@ -4,32 +4,52 @@ import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useData } from '@/lib/DataContext'
 
-const DEFAULT_URL = 'https://api.pakala.vip/v1/ling/phrases/lv'
+function buildUrl(host: string, lang: string) {
+  const h = host.trim().replace(/^https?:\/\//, '').replace(/\/$/, '')
+  const l = lang.trim()
+  return h && l ? `https://${h}/v1/ling/phrases/${l}` : ''
+}
+
+function parseUrl(url: string): { host: string; lang: string } {
+  try {
+    const u = new URL(url)
+    const lang = u.pathname.split('/').pop() ?? ''
+    return { host: u.host, lang }
+  } catch {
+    return { host: '', lang: '' }
+  }
+}
 
 export default function SettingsPage() {
   const router = useRouter()
   const { ready, loading, error, dataUrl, apiKey, fetchFromUrl, loadFromFile, clearData } = useData()
-  const [urlInput, setUrlInput] = useState(dataUrl || DEFAULT_URL)
+
+  const parsed = parseUrl(dataUrl)
+  const [host, setHost] = useState(parsed.host)
+  const [lang, setLang] = useState(parsed.lang)
   const [keyInput, setKeyInput] = useState(apiKey)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (dataUrl) setUrlInput(dataUrl)
+    const { host, lang } = parseUrl(dataUrl)
+    if (host) setHost(host)
+    if (lang) setLang(lang)
   }, [dataUrl])
 
-  useEffect(() => {
-    setKeyInput(apiKey)
-  }, [apiKey])
+  useEffect(() => { setKeyInput(apiKey) }, [apiKey])
 
   async function handleFetch() {
-    if (!urlInput.trim()) return
-    await fetchFromUrl(urlInput.trim(), keyInput.trim())
+    const url = buildUrl(host, lang)
+    if (!url) return
+    await fetchFromUrl(url, keyInput.trim())
   }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) await loadFromFile(file)
   }
+
+  const url = buildUrl(host, lang)
 
   return (
     <div className="min-h-screen max-w-md mx-auto px-4 py-8">
@@ -53,27 +73,44 @@ export default function SettingsPage() {
 
       {/* Option 1 — remote URL */}
       <section className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-        <h2 className="font-bold text-gray-900 mb-1">Load from URL</h2>
+        <h2 className="font-bold text-gray-900 mb-1">Load from server</h2>
         <p className="text-sm text-gray-500 mb-4">Fetches JSON and saves it to this device. Works offline after first load.</p>
+
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Host</label>
         <input
-          type="url"
-          value={urlInput}
-          onChange={e => setUrlInput(e.target.value)}
+          type="text"
+          value={host}
+          onChange={e => setHost(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleFetch()}
-          placeholder={DEFAULT_URL}
-          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mb-3 text-gray-800"
+          placeholder="example.com"
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mt-1 mb-3 text-gray-800"
         />
+
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Language code</label>
+        <input
+          type="text"
+          value={lang}
+          onChange={e => setLang(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleFetch()}
+          placeholder="lv"
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mt-1 mb-3 text-gray-800"
+        />
+
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">API key</label>
         <input
           type="password"
           value={keyInput}
           onChange={e => setKeyInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleFetch()}
-          placeholder="API key (if required)"
-          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mb-3 text-gray-800"
+          placeholder="(if required)"
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-amber-400 outline-none text-sm mt-1 mb-3 text-gray-800"
         />
+
+        {url && <p className="text-xs text-gray-400 mb-3 break-all">{url}</p>}
+
         <button
           onClick={handleFetch}
-          disabled={loading || !urlInput.trim()}
+          disabled={loading || !url}
           className="w-full py-3 rounded-xl bg-amber-400 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-sm"
         >
           {loading ? 'Fetching…' : 'Fetch & save'}
@@ -84,13 +121,7 @@ export default function SettingsPage() {
       <section className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
         <h2 className="font-bold text-gray-900 mb-1">Upload local file</h2>
         <p className="text-sm text-gray-500 mb-4">Pick <code className="bg-gray-100 px-1 rounded text-gray-700">lv_Latvian.json</code> from your device.</p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={handleFile}
-        />
+        <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handleFile} />
         <button
           onClick={() => fileRef.current?.click()}
           disabled={loading}
@@ -107,22 +138,13 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Success → go home */}
       {ready && (
-        <button
-          onClick={() => router.push('/')}
-          className="w-full py-4 rounded-2xl bg-green-500 text-white font-bold text-lg"
-        >
+        <button onClick={() => router.push('/')} className="w-full py-4 rounded-2xl bg-green-500 text-white font-bold text-lg">
           Go to units →
         </button>
       )}
-
-      {/* Clear data */}
       {ready && (
-        <button
-          onClick={clearData}
-          className="w-full mt-3 py-3 rounded-2xl text-red-500 text-sm font-semibold hover:bg-red-50"
-        >
+        <button onClick={clearData} className="w-full mt-3 py-3 rounded-2xl text-red-500 text-sm font-semibold hover:bg-red-50">
           Clear saved data
         </button>
       )}

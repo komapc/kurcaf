@@ -5,26 +5,23 @@ import { fileURLToPath } from 'url'
 import { createInterface } from 'readline'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT = resolve(__dirname, '../src/data/lv_Latvian.json')
 
-let apiKey = process.env.API_KEY ?? ''
-if (!apiKey) {
-  if (!process.stdin.isTTY) {
-    console.error('Error: API_KEY env var is not set. Add it as a GitHub secret.')
-    process.exit(1)
-  }
+async function prompt(question) {
+  if (!process.stdin.isTTY) { console.error(`Error: ${question} not set`); process.exit(1) }
   const rl = createInterface({ input: process.stdin, output: process.stderr })
-  apiKey = await new Promise(res => rl.question('API key: ', res))
+  const answer = await new Promise(res => rl.question(question + ': ', res))
   rl.close()
+  return answer.trim()
 }
 
-const response = await fetch('https://api.pakala.vip/v1/ling/phrases/lv', {
-  headers: { 'X-API-Key': apiKey.trim() },
-})
+const apiUrl  = process.env.API_URL  || await prompt('API URL (e.g. https://host/v1/ling/phrases/lv)')
+const apiKey  = process.env.API_KEY  || await prompt('API key')
+const outFile = process.env.OUT_FILE || resolve(__dirname, '../src/data/lv_Latvian.json')
 
-if (!response.ok) throw new Error(`HTTP ${response.status}`)
+const res = await fetch(apiUrl, { headers: apiKey ? { 'X-API-Key': apiKey } : {} })
+if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-const json = await response.json()
-mkdirSync(dirname(OUT), { recursive: true })
-writeFileSync(OUT, JSON.stringify(json))
-console.log(`Saved ${OUT} (${(JSON.stringify(json).length / 1024).toFixed(0)} KB)`)
+const json = await res.json()
+mkdirSync(dirname(outFile), { recursive: true })
+writeFileSync(outFile, JSON.stringify(json))
+console.log(`Saved ${outFile} (${(JSON.stringify(json).length / 1024).toFixed(0)} KB)`)

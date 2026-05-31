@@ -1,5 +1,3 @@
-const TARGET = 'https://api.pakala.vip/v1/ling/phrases/lv'
-
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'X-API-Key',
@@ -12,8 +10,12 @@ export default {
       return new Response(null, { status: 204, headers: CORS })
     }
 
+    const { searchParams } = new URL(request.url)
+    const target = searchParams.get('url')
+    if (!target) return new Response('Missing ?url=', { status: 400, headers: CORS })
+
     const apiKey = request.headers.get('X-API-Key') ?? ''
-    const res = await fetch(TARGET, {
+    const res = await fetch(target, {
       headers: apiKey ? { 'X-API-Key': apiKey } : {},
     })
 
