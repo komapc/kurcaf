@@ -191,13 +191,10 @@ export default function WordBankPage() {
     )
   }
 
-  const correctTokens = checked && !correct ? tokenize(sentence.original) : []
-
-  function chipColor(i: number): string {
+  function chipColor(): string {
     if (!checked) return 'bg-amber-400'
     if (correct) return 'bg-green-500'
-    const expected = correctTokens[i]
-    return expected && normalize(assembled[i].text) === normalize(expected) ? 'bg-amber-400' : 'bg-red-400'
+    return 'bg-amber-400'
   }
 
   const resultBorder = !checked ? 'border-gray-200 bg-gray-50'
@@ -240,7 +237,7 @@ export default function WordBankPage() {
                 onDragEnd={onDragEnd}
                 onClick={() => tapAssembled(i)}
                 disabled={checked}
-                className={`px-3 py-1.5 rounded-xl text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70 cursor-grab active:cursor-grabbing select-none ${chipColor(i)}`}
+                className={`px-3 py-1.5 rounded-xl text-white font-medium text-base shadow-sm active:scale-95 disabled:opacity-70 cursor-grab active:cursor-grabbing select-none ${chipColor()}`}
               >
                 {chip.text}
               </button>
