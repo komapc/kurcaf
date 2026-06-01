@@ -5,21 +5,14 @@ import { useState, useEffect } from 'react'
 import { getLesson } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
+import { shuffle, stripDiacritics } from '@/lib/utils'
+import { useEnterKey } from '@/hooks/useEnterKey'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
 import ItemImage from '@/components/ItemImage'
+import LessonComplete from '@/components/LessonComplete'
+import MissedRecap from '@/components/MissedRecap'
 import type { Word } from '@/lib/types'
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function stripDiacritics(s: string) {
-  return s.trim().toLowerCase()
-    .replace(/ā/g, 'a').replace(/ē/g, 'e').replace(/ī/g, 'i').replace(/ū/g, 'u')
-    .replace(/ņ/g, 'n').replace(/ļ/g, 'l').replace(/ķ/g, 'k').replace(/ģ/g, 'g')
-    .replace(/š/g, 's').replace(/ž/g, 'z').replace(/č/g, 'c')
-}
 
 type CheckResult = 'exact' | 'almost' | 'wrong'
 
@@ -74,55 +67,19 @@ export default function FillPage() {
     setIndex(0); setInput(''); setResult(null); setPhase('exercise')
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Enter') return
-      if (phase === 'done') { router.back(); return }
-      if (phase === 'recap') return
-      if (result) { next(); return }
-      if (input.trim()) check()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  useEnterKey(() => {
+    if (phase === 'done') { router.back(); return }
+    if (phase === 'recap') return
+    if (result) { next(); return }
+    if (input.trim()) check()
   }, [phase, result, input, index, missed])
 
   if (!ready || !words.length) return <div className="p-8 text-center text-gray-600">{ready ? 'No words in this lesson' : 'Loading…'}</div>
 
-  if (phase === 'done') {
-    return (
-      <div className="min-h-screen max-w-md mx-auto flex flex-col items-center justify-center gap-6 p-8">
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold text-gray-800">Lesson complete!</h2>
-        <button onClick={() => router.back()} className="px-6 py-3 bg-amber-400 text-white rounded-2xl font-semibold text-lg">Back to lesson</button>
-      </div>
-    )
-  }
+  if (phase === 'done') return <LessonComplete onBack={() => router.back()} />
 
   if (phase === 'recap') {
-    return (
-      <div className="min-h-screen max-w-md mx-auto flex flex-col px-4 py-8 gap-4">
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={() => setPhase('done')} className="text-2xl text-gray-600">‹</button>
-          <h2 className="text-lg font-bold text-gray-800">Review missed ({missed.length})</h2>
-        </div>
-        <div className="flex flex-col gap-3">
-          {missed.map(w => (
-            <div key={w.id} className="bg-white rounded-2xl border border-red-100 p-4 flex items-center gap-4">
-              <ItemImage src={`/images/${w.id}.png`} alt={w.translation} className="w-14 h-14 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-500">{w.translation}</p>
-                <p className="text-lg font-bold text-amber-600">{w.original}</p>
-              </div>
-              <AudioButton src={`/audio/${w.soundFile}`} size="sm" />
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-2">
-          <button onClick={retryMissed} className="py-4 rounded-2xl bg-amber-400 text-white font-semibold">Try again</button>
-          <button onClick={() => setPhase('done')} className="py-4 rounded-2xl bg-gray-100 text-gray-700 font-semibold">Continue</button>
-        </div>
-      </div>
-    )
+    return <MissedRecap missed={missed} onRetry={retryMissed} onContinue={() => setPhase('done')} />
   }
 
   const inputCls = `w-full px-4 py-3 rounded-xl border-2 text-base outline-none transition-colors ${

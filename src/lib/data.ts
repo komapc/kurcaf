@@ -29,12 +29,18 @@ export function isInitialized(): boolean {
   return _initialized
 }
 
-export function initFromRaw(raw: unknown): void {
+/** Clear all in-memory data (used when the user clears their saved course). */
+export function resetData(): void {
   wordMap.clear()
   sentenceMap.clear()
   dialogueMap.clear()
   for (const k of Object.keys(lessonIndex)) delete lessonIndex[+k]
   allUnits.length = 0
+  _initialized = false
+}
+
+export function initFromRaw(raw: unknown): void {
+  resetData()
 
   const mt = (raw as { mergedTarget: Record<string, unknown> }).mergedTarget
 

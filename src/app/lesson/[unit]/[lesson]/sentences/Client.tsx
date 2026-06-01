@@ -2,27 +2,20 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { getLesson } from '@/lib/data'
+import { getLesson, getUnit } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
+import { shuffle, buildOptions } from '@/lib/utils'
+import { useEnterKey } from '@/hooks/useEnterKey'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
+import LessonComplete from '@/components/LessonComplete'
 import type { Sentence } from '@/lib/types'
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function buildOptions(correct: Sentence, pool: Sentence[]): Sentence[] {
-  const distractors = shuffle(pool.filter(s => s.id !== correct.id)).slice(0, 3)
-  return shuffle([correct, ...distractors])
-}
 
 export default function SentencesPage() {
   const { unit, lesson } = useParams<{ unit: string; lesson: string }>()
   const router = useRouter()
   const { ready } = useData()
-  const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const [sentences, setSentences] = useState<Sentence[]>([])
 
   useEffect(() => {
@@ -30,12 +23,8 @@ export default function SentencesPage() {
     const b = getLesson(parseInt(unit), parseInt(lesson))
     setSentences(shuffle([...(b?.sentences ?? [])]))
   }, [ready, unit, lesson])
-  // pool = all sentences in the unit across all lessons
-  const unitSentences = ready
-    ? Array.from({ length: 4 }, (_, i) =>
-        getLesson(parseInt(unit), i + 1)?.sentences ?? []
-      ).flat()
-    : []
+  // pool = all sentences in the unit across every lesson
+  const unitSentences = ready ? getUnit(parseInt(unit)).flatMap(l => l.sentences) : []
 
   const [index, setIndex] = useState(0)
   const [options, setOptions] = useState<Sentence[]>([])
@@ -59,28 +48,15 @@ export default function SentencesPage() {
     else { setIndex(i => i + 1); setSelected(null) }
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Enter') return
-      if (done) { router.back(); return }
-      if (selected) next()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  useEnterKey(() => {
+    if (done) { router.back(); return }
+    if (selected) next()
   }, [done, selected, index])
 
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
   if (!sentences.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
 
-  if (done) {
-    return (
-      <div className="min-h-screen max-w-md mx-auto flex flex-col items-center justify-center gap-6 p-8">
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold text-gray-800">Lesson complete!</h2>
-        <button onClick={() => router.back()} className="px-6 py-3 bg-amber-400 text-white rounded-2xl font-semibold text-lg">Back to lesson</button>
-      </div>
-    )
-  }
+  if (done) return <LessonComplete onBack={() => router.back()} />
 
   return (
     <ExerciseShell title="Sentences" backHref={`/lesson/${unit}/${lesson}`} current={index} total={sentences.length}>

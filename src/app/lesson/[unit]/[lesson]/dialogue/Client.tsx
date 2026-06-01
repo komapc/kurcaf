@@ -1,10 +1,10 @@
 'use client'
 
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import { getLesson } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
+import { useEnterKey } from '@/hooks/useEnterKey'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
 import type { Dialogue } from '@/lib/types'
@@ -21,13 +21,7 @@ export default function DialoguePage() {
     router.back()
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Enter') markDone()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [dialogues])
+  useEnterKey(markDone, [dialogues])
 
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
   if (!dialogues.length) return <div className="p-8 text-center text-gray-600">No dialogue in this lesson</div>

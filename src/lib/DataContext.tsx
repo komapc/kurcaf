@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { initFromRaw, isInitialized } from './data'
+import { initFromRaw, resetData } from './data'
 
 const DATA_KEY = 'kurcaf_data'
 export const DATA_URL_KEY = 'kurcaf_data_url'
@@ -113,6 +113,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(DATA_KEY)
     localStorage.removeItem(DATA_URL_KEY)
     localStorage.removeItem(DATA_API_KEY)
+    resetData()
     setReady(false)
     setDataUrl('')
     setApiKey('')

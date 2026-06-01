@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { initFromRaw, isInitialized, allUnits, wordMap, sentenceMap, dialogueMap, getLesson, getUnit, getUnitWords } from '../lib/data'
+import { initFromRaw, isInitialized, resetData, allUnits, wordMap, sentenceMap, dialogueMap, getLesson, getUnit, getUnitWords } from '../lib/data'
 
 const sampleRaw = {
   mergedTarget: {
@@ -50,6 +50,18 @@ const sampleRaw = {
 
 beforeEach(() => {
   initFromRaw(sampleRaw)
+})
+
+describe('resetData', () => {
+  it('clears all maps, allUnits and the initialized flag', () => {
+    resetData()
+    expect(isInitialized()).toBe(false)
+    expect(wordMap.size).toBe(0)
+    expect(sentenceMap.size).toBe(0)
+    expect(dialogueMap.size).toBe(0)
+    expect(allUnits).toEqual([])
+    expect(getLesson(1, 1)).toBeNull()
+  })
 })
 
 describe('initFromRaw', () => {
