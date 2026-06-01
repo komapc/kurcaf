@@ -5,13 +5,12 @@ import { useState, useEffect } from 'react'
 import { getLesson, getUnitWords } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
+import { shuffle, buildOptions } from '@/lib/utils'
+import { useEnterKey } from '@/hooks/useEnterKey'
 import ExerciseShell from '@/components/ExerciseShell'
 import ItemImage from '@/components/ItemImage'
+import LessonComplete from '@/components/LessonComplete'
 import type { Word } from '@/lib/types'
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
 
 export default function ChoicePage() {
   const { unit, lesson } = useParams<{ unit: string; lesson: string }>()
@@ -19,7 +18,7 @@ export default function ChoicePage() {
   const { ready } = useData()
   const bundle = ready ? getLesson(parseInt(unit), parseInt(lesson)) : null
   const words: Word[] = bundle?.words ?? []
-  const unitWords = getUnitWords(parseInt(unit))
+  const unitWords = ready ? getUnitWords(parseInt(unit)) : []
 
   const [index, setIndex] = useState(0)
   const [options, setOptions] = useState<Word[]>([])
@@ -29,9 +28,7 @@ export default function ChoicePage() {
   const word = words[index]
 
   useEffect(() => {
-    if (!word) return
-    const distractors = shuffle(unitWords.filter(w => w.id !== word.id)).slice(0, 3)
-    setOptions(shuffle([word, ...distractors]))
+    if (word) setOptions(buildOptions(word, unitWords))
   }, [index, word])
 
   function next() {
@@ -39,28 +36,15 @@ export default function ChoicePage() {
     else { setIndex(i => i + 1); setSelected(null) }
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Enter') return
-      if (done) { router.back(); return }
-      if (selected) next()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  useEnterKey(() => {
+    if (done) { router.back(); return }
+    if (selected) next()
   }, [done, selected, index])
 
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
   if (!words.length) return <div className="p-8 text-center text-gray-600">No words in this lesson</div>
 
-  if (done) {
-    return (
-      <div className="min-h-screen max-w-md mx-auto flex flex-col items-center justify-center gap-6 p-8">
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold text-gray-800">Lesson complete!</h2>
-        <button onClick={() => router.back()} className="px-6 py-3 bg-amber-400 text-white rounded-2xl font-semibold text-lg">Back to lesson</button>
-      </div>
-    )
-  }
+  if (done) return <LessonComplete onBack={() => router.back()} />
 
   return (
     <ExerciseShell title="Choose" backHref={`/lesson/${unit}/${lesson}`} current={index} total={words.length}>

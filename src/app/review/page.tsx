@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { wordMap, sentenceMap } from '@/lib/data'
 import { getWeak, recordResult } from '@/lib/progress'
+import { useData } from '@/lib/DataContext'
+import { shuffle } from '@/lib/utils'
 import AudioButton from '@/components/AudioButton'
 import ItemImage from '@/components/ItemImage'
 import type { Word, Sentence } from '@/lib/types'
@@ -12,18 +14,16 @@ type ReviewItem =
   | { type: 'word'; item: Word }
   | { type: 'sentence'; item: Sentence }
 
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
 export default function ReviewPage() {
   const router = useRouter()
+  const { ready } = useData()
   const [items, setItems] = useState<ReviewItem[]>([])
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [done, setDone] = useState(false)
 
   useEffect(() => {
+    if (!ready) return
     const weakIds = getWeak()
     const collected: ReviewItem[] = []
     for (const id of weakIds) {
@@ -33,7 +33,7 @@ export default function ReviewPage() {
       if (sentence) collected.push({ type: 'sentence', item: sentence })
     }
     setItems(shuffle(collected))
-  }, [])
+  }, [ready])
 
   const current = items[index]
 
@@ -67,9 +67,7 @@ export default function ReviewPage() {
     )
   }
 
-  const label = current.type === 'word'
-    ? (current.item as Word).translation
-    : (current.item as Sentence).translation
+  const label = current.item.translation
   const original = current.item.original
 
   return (

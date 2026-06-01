@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * The UI is designed as a light theme — every screen uses explicit light
+ * backgrounds (bg-gray-50/bg-white) with dark text. We intentionally do NOT
+ * follow prefers-color-scheme: on a dark-OS the old setup left dark text on a
+ * dark page in places. Force a light color-scheme so form controls, scrollbars
+ * and the body all stay readable.
+ */
 :root {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -10,13 +18,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

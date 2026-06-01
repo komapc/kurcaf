@@ -38,6 +38,10 @@ function LessonCard({ bundle, unit }: { bundle: LessonBundle; unit: number }) {
         </div>
       </div>
       <div className="flex flex-col gap-2">
+        <Link href={`/lesson/${unit}/${bundle.lesson}/learn`}
+          className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-400 text-white font-semibold text-sm hover:bg-amber-500 active:scale-95 transition-all">
+          <span className="text-lg">📖</span> Learn new words
+        </Link>
         <div className="grid grid-cols-2 gap-2">
           {WORD_MODES.map(m => (
             <Link key={m.key} href={`/lesson/${unit}/${bundle.lesson}/${m.key}`}

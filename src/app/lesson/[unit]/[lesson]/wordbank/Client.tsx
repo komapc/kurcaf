@@ -5,25 +5,12 @@ import { useState, useEffect, useRef } from 'react'
 import { getLesson } from '@/lib/data'
 import { recordResult } from '@/lib/progress'
 import { useData } from '@/lib/DataContext'
+import { shuffle, tokenize, stripPunct, normalize } from '@/lib/utils'
+import { useEnterKey } from '@/hooks/useEnterKey'
 import ExerciseShell from '@/components/ExerciseShell'
 import AudioButton from '@/components/AudioButton'
+import LessonComplete from '@/components/LessonComplete'
 import type { Sentence } from '@/lib/types'
-
-function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5)
-}
-
-function tokenize(text: string): string[] {
-  return (text.match(/[^\s]+/g) ?? []).filter(t => !/^\(.*\)$/.test(t))
-}
-
-function stripPunct(s: string) {
-  return s.replace(/[.,!?;:…]+$/, '')
-}
-
-function normalize(s: string) {
-  return stripPunct(s).toLowerCase()
-}
 
 function checkAssembled(assembled: string[], original: string): boolean {
   return assembled.map(normalize).join(' ') === tokenize(original).map(normalize).join(' ')
@@ -167,29 +154,16 @@ export default function WordBankPage() {
     }
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Enter') return
-      if (done) { router.back(); return }
-      if (checked) { next(); return }
-      if (assembled.length > 0) check()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+  useEnterKey(() => {
+    if (done) { router.back(); return }
+    if (checked) { next(); return }
+    if (assembled.length > 0) check()
   }, [done, checked, assembled, index])
 
   if (!ready) return <div className="p-8 text-center text-gray-600">Loading…</div>
   if (ready && !sentenceList.length) return <div className="p-8 text-center text-gray-600">No sentences in this lesson</div>
 
-  if (done) {
-    return (
-      <div className="min-h-screen max-w-md mx-auto flex flex-col items-center justify-center gap-6 p-8">
-        <div className="text-5xl">🎉</div>
-        <h2 className="text-xl font-bold text-gray-800">Lesson complete!</h2>
-        <button onClick={() => router.back()} className="px-6 py-3 bg-amber-400 text-white rounded-2xl font-semibold text-lg">Back to lesson</button>
-      </div>
-    )
-  }
+  if (done) return <LessonComplete onBack={() => router.back()} />
 
   function chipColor(): string {
     if (!checked) return 'bg-amber-400'
