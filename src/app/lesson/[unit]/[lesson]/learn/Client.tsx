@@ -13,11 +13,15 @@ import LessonComplete from '@/components/LessonComplete'
 import type { Word, Sentence } from '@/lib/types'
 
 /** True if a sentence token refers to the target word (loose, diacritic-insensitive). */
-function tokenMatchesWord(token: string, word: string): boolean {
+export function tokenMatchesWord(token: string, word: string): boolean {
   const t = stripDiacritics(normalize(token))
   const w = stripDiacritics(normalize(word))
   if (!t || !w) return false
-  return t === w || t.startsWith(w) || w.startsWith(t)
+  if (t === w) return true
+  // Only allow inflection-tolerant prefix matching for longer words, so a short
+  // word like "ir" doesn't highlight every token that happens to start with "ir".
+  if (Math.min(t.length, w.length) < 4) return false
+  return t.startsWith(w) || w.startsWith(t)
 }
 
 /** Render the sentence with the target word emphasised where it appears. */
