@@ -49,3 +49,6 @@ next-env.d.ts
 
 # auto-copied from src/data/ at build time, not for git
 /public/data/
+
+# Local copies of third-party course data
+tst_*.json
