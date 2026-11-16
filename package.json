@@ -12,7 +12,7 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
-    "next": "16.2.6",
+    "next": "16.4.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -22,10 +22,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.12",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.12"
   }
 }
